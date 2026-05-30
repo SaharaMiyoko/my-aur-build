@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        repos: ayugram-desktop
+        repos: [ayugram-desktop]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
