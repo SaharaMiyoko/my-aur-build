@@ -26,60 +26,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build in Arch Linux container
+      - name: Build ayugram-desktop
         run: |
-          docker run --rm --privileged \
-            -v "${{ github.workspace }}/output:/output" \
-            -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
-            archlinux:latest bash -c '
-              set -euo pipefail
-
-              # 初始化 keyring 并更新系统
-              pacman-key --init
-              pacman-key --populate archlinux
-              pacman -Syu --noconfirm --needed base-devel git
-
-              # 创建非 root 编译用户（makepkg 拒绝以 root 运行）
-              useradd -m -G wheel builder
-              echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-              # 克隆 AUR 包
+          docker run --rm \
+            -v ${{ github.workspace }}:/build \
+            -w /build \
+            greyltc/archlinux-aur:paru \
+            bash -c '
+              set -e
+              pacman -Syu --noconfirm
+              
+              # 创建 builder 用户（makepkg 必须非 root）
+              useradd -m builder
+              echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/builder
+              
+              # 复制 PKGBUILD 等文件
+              cp -r /build/* /home/builder/ || true
+              cd /home/builder
+              chown -R builder:builder .
+              
               su builder -c "
-                git clone https://aur.archlinux.org/ayugram-desktop.git /home/builder/ayugram-desktop
-                cd /home/builder/ayugram-desktop
-
-                # 安装依赖（--asdeps 标记为依赖，便于之后清理）
-                makepkg --nobuild --noconfirm --syncdeps --rmdeps 2>&1 || true
-
-                # 正式编译
-                # CMAKE_BUILD_PARALLEL_LEVEL=2 限制并行数，防止 OOM
-                # --nocheck 跳过测试，节省时间
-                CMAKE_BUILD_PARALLEL_LEVEL=2 \
-                TAR_OPTIONS=\"--no-xattrs\" \
-                makepkg -s --noconfirm --nocheck --noprogressbar 2>&1
+                makepkg -si --noconfirm --syncdeps
               "
-
-              # 复制产物到宿主机
-              cp /home/builder/ayugram-desktop/*.pkg.tar.zst /output/ 2>/dev/null || \
-              cp /home/builder/ayugram-desktop/*.pkg.tar.xz  /output/ 2>/dev/null || true
+              
+              # 把生成的包复制出来
+              cp *.pkg.tar.zst /build/
             '
 
-      - name: Upload package as artifact
+      - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: ayugram-desktop-pkg
-          path: output/*.pkg.tar.*
+          name: ayugram-desktop-package
+          path: "*.pkg.tar.zst"
           retention-days: 30
-          if-no-files-found: error
-
-      - name: Release to GitHub Releases
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          tag: "latest"
-          name: "ayugram-desktop latest build"
-          body: |
-            自动构建于 ${{ github.run_id }}
-            触发方式：${{ github.event_name }}
-          artifacts: "output/*.pkg.tar.*"
-          token: ${{ secrets.GITHUB_TOKEN }}
