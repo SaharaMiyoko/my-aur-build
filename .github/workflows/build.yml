@@ -94,14 +94,3 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: Release to GitHub Releases
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          tag: "latest"
-          name: "ayugram-desktop latest build"
-          body: |
-            自动构建于 ${{ github.run_id }}
-            触发方式：${{ github.event_name }}
-          artifacts: "output/*.pkg.tar.*"
-          token: ${{ secrets.GITHUB_TOKEN }}
