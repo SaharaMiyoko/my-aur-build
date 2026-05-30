@@ -83,5 +83,3 @@ jobs:
             触发方式：${{ github.event_name }}
           artifacts: "output/*.pkg.tar.*"
           token: ${{ secrets.GITHUB_TOKEN }}
-EOF
-echo "Done"
