@@ -25,6 +25,16 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Free disk space
+
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true     # 释放约 6GB
+          android: true        # 释放约 8GB
+          dotnet: true
+          haskell: true
+          large-packages: true
+
 
       - name: Build in Arch Linux container
         run: |
