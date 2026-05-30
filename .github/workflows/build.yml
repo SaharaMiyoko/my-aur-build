@@ -18,7 +18,4 @@ jobs:
       - uses: DuckSoft/build-aur-action@master
         with:
           repo-name: ${{ matrix.repos }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: built-packages
-          path: ./*/*.pkg.tar.zst
+
