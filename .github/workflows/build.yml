@@ -46,11 +46,14 @@ jobs:
 
 
       - name: Build in Arch Linux container
+        env:
+          MY_API_ID: ${{ secrets.TDESKTOP_API_ID }}
+          MY_API_HASH: ${{ secrets.TDESKTOP_API_HASH }}
         run: |
           docker run --rm --privileged \
             -v "${{ github.workspace }}/output:/output" \
-            -e MAKEPKG_AYUGRAM_API_ID \
-            -e MAKEPKG_AYUGRAM_API_HASH \
+            -e MAKEPKG_AYUGRAM_API_ID="${MY_API_ID}" \
+            -e MAKEPKG_AYUGRAM_API_HASH="${MY_API_HASH}" \
             -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
             archlinux:latest bash -c '
               set -euo pipefail
